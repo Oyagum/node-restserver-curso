@@ -3,9 +3,9 @@ const bcrypt = require('bcrypt');
 const _ = require('underscore');
 const saltRound = 10;
 const User = require('../models/user');
+const { verifyToken, verifyAdminRole } = require('../middlewares/authentication');
 const app = express();
-app.get('/usuario', function(req, res) {
-
+app.get('/usuario', verifyToken, (req, res) => {
     let from = Number(req.query.from) || 0;
     let limit = Number(req.query.limit) || 5;
     User.find({ status: true }, 'name email role status')
@@ -29,7 +29,7 @@ app.get('/usuario', function(req, res) {
         });
 });
 
-app.post('/usuario', function(req, res) {
+app.post('/usuario', [verifyToken, verifyAdminRole], (req, res) => {
     let body = req.body;
     let user = new User({
         name: body.name,
@@ -53,7 +53,7 @@ app.post('/usuario', function(req, res) {
     });
 });
 
-app.put('/usuario/:id', function(req, res) {
+app.put('/usuario/:id', [verifyToken, verifyAdminRole], (req, res) => {
 
     let id = req.params.id;
     let body = _.pick(req.body, ['name', 'email', 'img', 'role', 'status']);
@@ -74,7 +74,7 @@ app.put('/usuario/:id', function(req, res) {
 
 });
 
-app.delete('/usuario/:id', function(req, res) {
+app.delete('/usuario/:id', [verifyToken, verifyAdminRole], (req, res) => {
     let id = req.params.id;
     User.findByIdAndUpdate(id, { status: false }, {}, (err, userDB) => {
         if (err) {
@@ -89,28 +89,6 @@ app.delete('/usuario/:id', function(req, res) {
             user: userDB
         });
     });
-    /*User.findByIdAndRemove(id, (err, userDeleted) => {
-        if (err) {
-            return res.status(400).json({
-                ok: false,
-                err
-            });
-        };
-
-        /*if (!userDeleted) {
-            return res.status(400).json({
-                ok: false,
-                err: {
-                    message: 'Usuario no encontrado'
-                }
-            });
-        }
-        res.json({
-            ok: true,
-            user: userDeleted
-        });
-    });*/
-
 });
 
 module.exports = app;
